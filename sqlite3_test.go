@@ -40,7 +40,10 @@ func TestCreateDB(t *testing.T) {
 	insertRecordTest(t, db, "arunsworld@gmail.com", 1)
 	insertRecordTest(t, db, "arun@e2open.com", 2)
 
+	queryOneRecordTest(t, db)
 	genericQueryTest(t, db)
+	noRecordFoundTest(t, db)
+	deleteRecordTest(t, db)
 
 	err = os.Remove("/tmp/test.db")
 	if err != nil {
@@ -75,8 +78,50 @@ func insertRecordTest(t *testing.T, db *sql.DB, email string, expectedID int64) 
 	}
 }
 
-func queryRecordTest(t *testing.T, db *sql.DB) {
+func queryOneRecordTest(t *testing.T, db *sql.DB) {
+	var email string
+	var firstName string
+	err := db.QueryRow("SELECT email, first_name FROM USERS WHERE id = $1", "1").Scan(&email, &firstName)
+	if err != nil {
+		t.Error("Error while querying one record: ", err)
+		return
+	}
+	if email != "arunsworld@gmail.com" {
+		t.Error("Email not matching. Found: " + email)
+	}
+	if firstName != "Arun" {
+		t.Error("First Name not matching. Found: " + firstName)
+	}
+}
 
+func noRecordFoundTest(t *testing.T, db *sql.DB) {
+	var email string
+	var firstName string
+	err := db.QueryRow("SELECT email, first_name FROM USERS WHERE id = $1", "10").Scan(&email, &firstName)
+	if err != sql.ErrNoRows {
+		t.Error("Expected no rows error to be returned but got error: ", err)
+		return
+	}
+	if err == nil {
+		t.Error("Expected no rows error but got nothing.")
+	}
+}
+
+func deleteRecordTest(t *testing.T, db *sql.DB) {
+	result, err := db.Exec("DELETE FROM USERS WHERE id=$1", "1")
+	if err != nil {
+		t.Error("Error while deleting user:", err)
+		return
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		t.Error("Error while deleting user:", err)
+		return
+	}
+	if rows != 1 {
+		t.Error("Expected one record to be deleted. Got: ", rows)
+		return
+	}
 }
 
 func genericQueryTest(t *testing.T, db *sql.DB) {
