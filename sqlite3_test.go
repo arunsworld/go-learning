@@ -10,7 +10,12 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func TestCreateDB(t *testing.T) {
+func TestCreateAndExerciseSqliteDB(t *testing.T) {
+	_, err := os.Stat("/tmp/test.db")
+	if err == nil {
+		os.Remove("/tmp/test.db")
+	}
+
 	db, err := sql.Open("sqlite3", "file:/tmp/test.db")
 	if err != nil {
 		t.Error("Could not open DB: ", err)
@@ -41,6 +46,7 @@ func TestCreateDB(t *testing.T) {
 	insertRecordTest(t, db, "arun@e2open.com", 2)
 
 	queryOneRecordTest(t, db)
+	queryMultipleRecordsTest(t, db)
 	genericQueryTest(t, db)
 	noRecordFoundTest(t, db)
 	deleteRecordTest(t, db)
@@ -92,6 +98,39 @@ func queryOneRecordTest(t *testing.T, db *sql.DB) {
 	if firstName != "Arun" {
 		t.Error("First Name not matching. Found: " + firstName)
 	}
+}
+
+func queryMultipleRecordsTest(t *testing.T, db *sql.DB) {
+	rows, err := db.Query("SELECT email, first_name FROM USERS WHERE first_name = $1 ORDER BY id", "Arun")
+	if err != nil {
+		t.Log("Error creating Select query: ", err)
+		return
+	}
+	defer rows.Close()
+
+	counter := 0
+	for rows.Next() {
+		var (
+			email     string
+			firstName string
+		)
+		if err := rows.Scan(&email, &firstName); err != nil {
+			t.Fatal(err)
+		}
+		if counter == 0 {
+			if email != "arunsworld@gmail.com" {
+				t.Fatal("Expected first row to be arunsworld@gmail.com. Got:", email)
+			}
+			if firstName != "Arun" {
+				t.Fatal("Expected first row to be Arun. Got:", firstName)
+			}
+		}
+		counter++
+	}
+	if counter != 2 {
+		t.Fatal("Expected to see 2 records, instead got:", counter)
+	}
+
 }
 
 func noRecordFoundTest(t *testing.T, db *sql.DB) {
