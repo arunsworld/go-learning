@@ -11,8 +11,8 @@ import (
 
 func TestOpenAndPingAWSDB(t *testing.T) {
 
-	if os.Getenv("PHOENIX-AVAILABLE") == "" {
-		t.Skip("Set the PHOENIX-AVAILABLE flag to run this test when HDP Lab is accessible.")
+	if os.Getenv("PHOENIX_AVAILABLE") == "" {
+		t.Skip("Set the PHOENIX_AVAILABLE flag to run this test when HDP Lab is accessible.")
 	}
 
 	db, err := sql.Open("avatica", "http://172.16.3.196:8765")

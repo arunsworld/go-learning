@@ -12,6 +12,9 @@ import (
 	gomail "gopkg.in/gomail.v2"
 )
 
+// Went the extra step of setting up an SMTP server to debug
+// clients and what they send. Also it's pretty cool to have your own server implementation
+// allowing client tests to run without dependency on another server
 type emailReceiver struct{}
 
 func (e *emailReceiver) AddRecipient(rcpt smtpd.MailAddress) error {
@@ -23,6 +26,7 @@ func (e *emailReceiver) BeginData() error {
 }
 
 func (e *emailReceiver) Write(line []byte) error {
+	// fmt.Print(string(line))
 	return nil
 }
 
@@ -169,6 +173,24 @@ func TestSendingViaOutlookUsingGOMAIL(t *testing.T) {
 	m.SetBody("text/plain", "Body with plain text")
 
 	d := gomail.NewDialer(hostname, 587, "arun.barua@e2open.com", pwd)
+
+	if err := d.DialAndSend(m); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestLocalGOMAIL(t *testing.T) {
+	go runSMTPServer(t)
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", "arun.barua@e2open.com")
+	m.SetHeader("To", "arun.barua@e2open.com", "arunsworld@gmail.com")
+	m.SetHeader("Subject", "Email from gomail")
+	m.SetBody("text/plain", "Body with plain text")
+
+	m.Attach("email_test.go", gomail.Rename("abc.txt"))
+
+	d := gomail.NewDialer("localhost", 25, "", "")
 
 	if err := d.DialAndSend(m); err != nil {
 		t.Fatal(err)
