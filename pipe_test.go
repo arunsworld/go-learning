@@ -8,17 +8,17 @@ import (
 )
 
 func TestInputPipe(t *testing.T) {
+	t.Skip("Don't know how to test so using this for documentation. Function below used to read data piped in.")
+	processPipeData()
 }
 
 func processPipeData() string {
+	// Sourced from http://blog.ralch.com/tutorial/golang-command-line-pipes/
 	info, err := os.Stdin.Stat()
 	if err != nil {
 		return ""
 	}
 	if (info.Mode() & os.ModeCharDevice) == os.ModeCharDevice {
-		return ""
-	}
-	if info.Size() == 0 {
 		return ""
 	}
 	r := bufio.NewReader(os.Stdin)
