@@ -114,3 +114,64 @@ func BenchmarkThreadSafeMapCache(b *testing.B) {
 		cache.Retrieve(5)
 	}
 }
+
+func TestPublishToMultipleListeners(t *testing.T) {
+	listenerCh1 := make(chan int)
+	listenerCh2 := make(chan int)
+	ch := make(chan struct{})
+	go func() {
+		for i := 0; i < 1000; i++ {
+			ch <- struct{}{}
+		}
+		close(ch)
+	}()
+	// Listen to ch and publish to listenerCh1
+	go func() {
+		counter := 0
+		for {
+			_, ok := <-ch
+			if !ok {
+				break
+			}
+			counter++
+		}
+		listenerCh1 <- counter
+	}()
+	// Listen to ch and publish to listenerCh2
+	go func() {
+		counter := 0
+		for {
+			_, ok := <-ch
+			if !ok {
+				break
+			}
+			counter++
+		}
+		listenerCh2 <- counter
+	}()
+	a := <-listenerCh1
+	b := <-listenerCh2
+	if a+b != 1000 {
+		t.Fatal("Expected responses to total 1000 but didn't")
+	}
+}
+
+func TestBroadcastUsingChannelClose(t *testing.T) {
+	broadcast := make(chan struct{})
+	wg := sync.WaitGroup{}
+	wg.Add(10)
+	for i := 0; i < 10; i++ {
+		// Kick off a job waiting on broadcast after which will mark wg as Done
+		go func() {
+			// Do some serious work
+			<-broadcast
+			wg.Done()
+		}()
+	}
+	// Now broadcast to jobs by closing the channel
+	go func() {
+		// Do some serious work
+		close(broadcast)
+	}()
+	wg.Wait()
+}
