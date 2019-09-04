@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	_ "github.com/apache/calcite-avatica-go/v3"
+	_ "github.com/apache/calcite-avatica-go/v4"
 )
 
 func TestOpenAndPingAWSDB(t *testing.T) {
